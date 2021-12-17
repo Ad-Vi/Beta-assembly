@@ -14,6 +14,7 @@
 |;   Ra : element Reg(Ra) to swap with element Reg(Rb)
 |;   Rb : element Reg(Rb) to swap with element Reg(Ra)
 |;   Rtmp1, Rtmp2 : tempory register to do the swap
+|; register used are restored
 .macro SWAP(Ra, Rb, RTMP1, RTMP2) LD(Ra, 0, RTMP1) LD(Rb, 0, RTMP2) ST(RTMP1, 0, Rb) ST(RTMP2, 0, Ra)
 
 |; Swap the content of two position in an array
@@ -21,7 +22,7 @@
 |;   Rb : index of element 1 to swap
 |;   Rc : index of element 2 to swap
 |;   Rtmp1, Rtmp2 : tempory register to do the swap
-.macro SWAPARR(Ra, Rb, Rc, RTMP1, RTMP2) PUSH(Rb) PUSH(Rc) ADDR(Ra, Rb, Rb) ADDR(Ra, Rc, Rc) SWAP(Rb, Rc, RTMP1, RTMP2) POP(Rc) POP(Rb)
+.macro SWAPARR(Ra, Rb, Rc, RTMP1, RTMP2) PUSH(Rb) PUSH(Rc) PUSH(RTMP1) PUSH(RTMP2) ADDR(Ra, Rb, Rb) ADDR(Ra, Rc, Rc) SWAP(Rb, Rc, RTMP1, RTMP2) POP(RTMP2) POP(RTMP1) POP(Rc) POP(Rb)
 
 
 |; Quicksort(array, size):
@@ -91,40 +92,33 @@ quick_sort_partition:
   PUSH(R1) PUSH(R2)
   PUSH(R3) PUSH(R4)
   PUSH(R5) PUSH(R6)
-  PUSH(R7) PUSH(R8)
   LD(BP, -20, R1)                   |; Reg(R1) <- array
   LD(BP, -16, R2)            
   SUBC(R2, 1, R2)                   |; Reg(R2) <- size - 1
   LD(BP, -12, R3)                   |; Reg(R3) <- pivot pos
 
   SWAPARR(R1, R3, R2, R4, R5)       |; Swap pivot with the end of the array
+  CMOVE(-1, R4)                     |; R4 <- small 
+  CMOVE(-1, R5)                     |; R5 <- current
   LDARR(R1, R2, R6)                 |; R6 <- pivot_val = array[size - 1]
-  CMOVE(-1, R7)                     |; R7 <- small 
-  CMOVE(-1, R8)                     |; R8 <- current
 
 quick_sort_partition_loop:
-  ADDC(R8, 1, R8)                   |; current ++
-  CMPLT(R8, R2, R0)                 |; R0 <- (current < size - 1)
-  BF(R0, quick_sort_partition_2)    |; JMP(_2) if not R0  (quit loop)
+  ADDC(R5, 1, R5)                   |; current ++
+  CMPLT(R5, R2, R0)                 |; R0 <- (current < size - 1)
+  BF(R0, quick_sort_partition_end)  |; JMP(end) if not R0  (quit loop)
   
-  LDARR(R1, R8, R0)                 |; R0 <- array[current]
-  ADDC(R6, 1, R4)
-  CMPLT(R0, R4, R0)                 |; R0 <- (array[current] <= pivot_val)
+  LDARR(R1, R5, R0)                 |; R0 <- array[current]
+  CMPLE(R0, R6, R0)                 |; R0 <- (array[current] <= pivot_val)
   BF(R0, quick_sort_partition_loop) |; JMP(loop) if not R0 (do not make the if bloc)
 
                                     |; if (array[current] <= pivot_val) :
-  ADDC(R7, 1, R7)                   |; small ++
-  SWAPARR(R1, R8, R7, R4, R5)       |; swap(array + current, array + small)
+  ADDC(R4, 1, R4)                   |; small ++
+  SWAPARR(R1, R5, R4, R2, R3)       |; swap(array + current, array + small)
   BR(quick_sort_partition_loop)
-quick_sort_partition_2:
-  ADDC(R7, 1, R0)
-  SWAPARR(R1, R0, R2, R4, R5)       |; swap(array + small + 1, array + size - 1)
-  
-  ADDC(R7, 1, R0)                   |; returned value : small + 1
 
 quick_sort_partition_end:
-  POP(R8)
-  POP(R7)
+  ADDC(R4, 1, R0)                   |; returned value : small + 1
+  SWAPARR(R1, R0, R2, R3, R4)       |; swap(array + small + 1, array + size - 1)
   POP(R6)
   POP(R5)
   POP(R4)

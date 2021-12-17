@@ -16,6 +16,14 @@
 |;   Rtmp1, Rtmp2 : tempory register to do the swap
 .macro SWAP(Ra, Rb, RTMP1, RTMP2) LD(Ra, 0, RTMP1) LD(Rb, 0, RTMP2) ST(RTMP1, 0, Rb) ST(RTMP2, 0, Ra)
 
+|; Swap the content of two position in an array
+|;   Ra : adress of the arrray
+|;   Rb : index of element 1 to swap
+|;   Rc : index of element 2 to swap
+|;   Rtmp1, Rtmp2 : tempory register to do the swap
+|; registers used are restored
+.macro SWAPARR(Ra, Rb, Rc, RTMP1, RTMP2) PUSH(Rb) PUSH(Rc) PUSH(RTMP1) PUSH(RTMP2) ADDR(Ra, Rb, Rb) ADDR(Ra, Rc, Rc) SWAP(Rb, Rc, RTMP1, RTMP2) POP(RTMP2) POP(RTMP1) POP(Rc) POP(Rb)
+
 |; Bubblesort(array, size):
 |;  Sort the given array using the Bubblesort algorithm
 |;  @param array Address of array[0] in the DRAM
@@ -26,44 +34,38 @@ bubblesort:
   MOVE(SP, BP)
   PUSH(R1) PUSH(R2)
   PUSH(R3) PUSH(R4)
-  PUSH(R5) PUSH(R6) PUSH(R7)
-  LD(BP, -16, R1)             |; Reg(R1) <- array
+  PUSH(R5)
+  LD(BP, -16, R1)               |; Reg(R1) <- array
   LD(BP, -12, R2)             
-  SUBC(R2, 1, R2)             |; Reg(R2) <- size - 1
-  MOVE(R31, R3)               |; Reg(R3) <- i
+  SUBC(R2, 1, R2)               |; Reg(R2) <- size - 1
+  MOVE(R31, R3)                 |; Reg(R3) <- i
 
 bubble_sort_loop_i:
-  CMPLT(R3, R2, R0)           |; R0 <- (i < size - 1)
-  BF(R0, bubble_sort_end)     |; Jmp(end) if not R0 (quit loop_i)
-  MOVE(R31, R4)               |; Reg(R4) <- j
+  CMPLT(R3, R2, R0)             |; R0 <- (i < size - 1)
+  BF(R0, bubble_sort_end)       |; Jmp(end) if not R0 (quit loop_i)
+  MOVE(R31, R4)                 |; Reg(R4) <- j
 
 bubble_sort_loop_j:
   SUB(R2, R3, R5)
-  CMPLT(R4, R5, R0)           |; R0 <- (j < size - 1 - i)
-  BF(R0, bubble_sort_loop_i_2)|; Jmp(loop_i_2) if not R0 (quit loop_j)
-  LDARR(R1, R4, R5)           |; R5 <- array[j] 
-  ADDC(R4, 1, R4)             |; j ++
-  LDARR(R1, R4, R6)           |; R6 <- array[j+1]
-  CMPLT(R6, R5, R0)           |; R0 <- (array[j+1] < array[j])
-.breakpoint
-  BT(R0, bubble_sort_swap)    |; Jmp(swap) if R0
+  CMPLT(R4, R5, R0)             |; R0 <- (j < size - 1 - i)
+  BF(R0, bubble_sort_loop_i_2)  |; Jmp(loop_i_2) if not R0 (quit loop_j)
+  LDARR(R1, R4, R5)             |; R5 <- array[j] 
+  ADDC(R4, 1, R4)               |; j ++
+  LDARR(R1, R4, R0)             |; R0 <- array[j+1]
+  CMPLT(R0, R5, R0)             |; R0 <- (array[j+1] < array[j])
+  BT(R0, bubble_sort_swap)      |; Jmp(swap) if R0
   BR(bubble_sort_loop_j)
 
 bubble_sort_loop_i_2:
-  ADDC(R3, 1, R3)             |; i ++
-  BR(bubble_sort_loop_i)      |; Jmp(start of loop_i)
+  ADDC(R3, 1, R3)               |; i ++
+  BR(bubble_sort_loop_i)        |; Jmp(start of loop_i)
 
 bubble_sort_swap:
-  ADDR(R1, R4, R5)            |; R5 <- Address of array(j+1) 
   SUBC(R4, 1, R0)
-  ADDR(R1, R0, R6)            |; R6 <- Address of array(j) 
-  SWAP(R5, R6, R0, R7)        |; swap adresses of array[j] and array[j+1]
-.breakpoint
+  SWAPARR(R1, R0, R4, R2, R3)
   BR(bubble_sort_loop_j)
 
 bubble_sort_end:
-  POP(R7)
-  POP(R6)
   POP(R5)
   POP(R4)
   POP(R3)
