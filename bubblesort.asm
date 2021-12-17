@@ -27,8 +27,8 @@ bubblesort:
   PUSH(R1) PUSH(R2)
   PUSH(R3) PUSH(R4)
   PUSH(R5) PUSH(R6) PUSH(R7)
-  LD(BP, -12, R1)             |; Reg(R1) <- array
-  LD(BP, -16, R2)             
+  LD(BP, -16, R1)             |; Reg(R1) <- array
+  LD(BP, -12, R2)             
   SUBC(R2, 1, R2)             |; Reg(R2) <- size - 1
   MOVE(R31, R3)               |; Reg(R3) <- i
 
