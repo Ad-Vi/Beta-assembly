@@ -57,7 +57,7 @@ quicksort:
   PUSH(R3)                      |;   new pivot pos     => size
 |;.breakpoint
   CALL(quicksort, 2)
-.breakpoint
+|;.breakpoint
   ADDC(R3, 1, R4)         
   ADDR(R1, R4, R4)              |; R4 <- array + pivot + 1 ADDRESS
   SUB(R2, R3, R0)
@@ -66,7 +66,7 @@ quicksort:
                                 |; arguments quicksort SORT THE RIGTH SUBARRAY
   PUSH(R4)                      |;   array + pivot + 1 => array ADDRESS
   PUSH(R0)                      |;   size - pivot - 1  => size  
-.breakpoint
+|;.breakpoint
   CALL(quicksort, 2)
 
 quick_sort_end:
@@ -103,9 +103,9 @@ quick_sort_partition:
   CMOVE(-1, R8)                     |; R8 <- current
 
 quick_sort_partition_loop:
+  ADDC(R8, 1, R8)                   |; current ++
   CMPLT(R8, R2, R0)                 |; R0 <- (current < size - 1)
   BF(R0, quick_sort_partition_2)    |; JMP(_2) if not R0  (quit loop)
-  ADDC(R8, 1, R8)                   |; current ++
   
   LDARR(R1, R8, R0)                 |; R0 <- array[current]
   ADDC(R6, 1, R4)
